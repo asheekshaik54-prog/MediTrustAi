@@ -1,0 +1,34 @@
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: [mongo_data:/data/db]
+  ganache:
+    image: trufflesuite/ganache:latest
+    command: --deterministic --host 0.0.0.0
+    ports: ["8545:8545"]
+  backend:
+    build: { context: ., dockerfile: docker/Dockerfile.backend }
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      GANACHE_URL: http://ganache:8545
+      JWT_SECRET: change-me
+    ports: ["8000:8000"]
+    volumes: [./artifacts:/app/artifacts, ./blockchain:/app/blockchain]
+    depends_on: [mongo, ganache]
+  fl-server:            # edge/federated server (start with: docker compose --profile fl up)
+    profiles: [fl]
+    build: { context: ., dockerfile: docker/Dockerfile.backend }
+    command: python -m federated.server
+    environment: { GANACHE_URL: "http://ganache:8545" }
+    volumes: [./artifacts:/app/artifacts, ./blockchain:/app/blockchain]
+  hospital1: &h
+    profiles: [fl]
+    build: { context: ., dockerfile: docker/Dockerfile.backend }
+    command: python -m federated.client --id 0 --server fl-server:8080
+  hospital2: { <<: *h, command: python -m federated.client --id 1 --server fl-server:8080 }
+  hospital3: { <<: *h, command: python -m federated.client --id 2 --server fl-server:8080 }
+  frontend:
+    build: { context: ., dockerfile: docker/Dockerfile.frontend }
+    ports: ["5173:5173"]
+volumes: { mongo_data: {} }

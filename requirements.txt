@@ -1,0 +1,16 @@
+tensorflow==2.15.*
+flwr==1.8.0
+scikit-learn
+pandas
+numpy<2
+joblib
+shap
+fastapi
+uvicorn[standard]
+pymongo
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1
+python-multipart
+web3>=6
+py-solc-x
